@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
+import { Resend } from "resend"
 import { contactSchema } from "@/lib/validations/contact"
+
+const resend = new Resend(process.env.RESEND_API_KEY)
 
 // In-memory rate limiting: max 3 requests per IP per 10 minutes
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
@@ -70,16 +73,29 @@ export async function POST(req: NextRequest) {
 
   const { nombre, empresa, email, telefono, asunto, mensaje } = result.data
 
-  // TODO: Integrate mail sending here (Nodemailer / Resend / SendGrid)
-  // Example with Resend:
-  // await resend.emails.send({
-  //   from: "no-reply@maxwellsa.com.ar",
-  //   to: "contacto@maxwellsa.com.ar",
-  //   subject: `[Maxwell] ${asunto}`,
-  //   text: `Nombre: ${nombre}\nEmpresa: ${empresa}\nEmail: ${email}\nTeléfono: ${telefono}\n\n${mensaje}`,
-  // })
-
-  console.log("Contact form submission:", { nombre, empresa, email, telefono, asunto, mensaje })
+  try {
+    await resend.emails.send({
+      from: "Maxwell Web <no-reply@maxwellsa.com.ar>",
+      to: ["contacto@maxwellsa.com.ar"],
+      replyTo: email,
+      subject: `[Maxwell Web] ${asunto}`,
+      text: [
+        `Nombre: ${nombre}`,
+        `Empresa: ${empresa || "—"}`,
+        `Email: ${email}`,
+        `Teléfono: ${telefono || "—"}`,
+        ``,
+        `Mensaje:`,
+        mensaje,
+      ].join("\n"),
+    })
+  } catch (err) {
+    console.error("Resend error:", err)
+    return NextResponse.json(
+      { error: "Error al enviar el mensaje. Intente nuevamente." },
+      { status: 500 }
+    )
+  }
 
   return NextResponse.json({ ok: true })
 }

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx skills:*)"
+      "Bash(npx skills:*)",
+      "Bash(cd \"/c/Users/Joaco/OneDrive - UTN FRLP/Desktop/Pryoectos\" && mkdir -p frontend backend && mv app components hooks lib public styles next.config.mjs next-env.d.ts package.json package-lock.json pnpm-lock.yaml postcss.config.mjs tsconfig.json components.json frontend/ 2>&1 && echo \"Done\")",
+      "Bash(find \"/c/Users/Joaco/OneDrive - UTN FRLP/Desktop/Pryoectos/frontend\" -type f \\\\\\( -name \"*.config.*\" -o -name \"*.env*\" -o -name \".gitignore\" \\\\\\) 2>/dev/null | head -20)",
+      "Bash(cd \"C:\\\\Users\\\\Joaco\\\\OneDrive - UTN FRLP\\\\Desktop\\\\Pryoectos\\\\frontend\" && npm install resend)"
     ]
   }
 }
