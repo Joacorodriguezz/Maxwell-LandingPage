@@ -10,11 +10,7 @@ import { useInView } from "@/hooks/use-in-view"
 import { contactSchema, type ContactFormData } from "@/lib/validations/contact"
 
 const contactEmails = [
-  { area: "Administración", email: "administracion@maxwellsa.com.ar" },
-  { area: "Gerencia", email: "gerencia@maxwellsa.com.ar" },
-  { area: "Ingeniería", email: "ingenieria@maxwellsa.com.ar" },
   { area: "Contacto General", email: "contacto@maxwellsa.com.ar" },
-  { area: "Calidad", email: "calidad@maxwellsa.com.ar" },
 ]
 
 export function Contact() {
@@ -265,7 +261,7 @@ export function Contact() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1A2B4C] text-white">
                   <Mail className="h-5 w-5" />
                 </div>
-                <h4 className="font-semibold text-[#1A2B4C]">Emails por Área</h4>
+                <h4 className="font-semibold text-[#1A2B4C]">Email de Contacto</h4>
               </div>
               <div className="space-y-2">
                 {contactEmails.map((item) => (

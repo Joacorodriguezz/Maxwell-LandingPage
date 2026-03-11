@@ -26,7 +26,7 @@ export function Footer() {
             />
             <p className="mt-4 leading-relaxed text-white/70">
               Servicios de Ingeniería y Obra de alta complejidad. 
-              Más de 30 años de experiencia en proyectos para la industria 
+              Más de 10 años de experiencia en proyectos para la industria 
               del petróleo, gas, energía y construcción industrial.
             </p>
             <p className="mt-4 text-sm text-white/50">

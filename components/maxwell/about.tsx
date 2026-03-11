@@ -33,8 +33,8 @@ export function About() {
           <div className={`relative ${sectionInView ? "reveal-left" : "reveal-hidden"}`}>
             <div className="aspect-[4/3] overflow-hidden rounded-lg bg-muted">
               <img
-                src="/ingenierosEnRefineria.png"
-                alt="Ingenieros en refinería"
+                src="/Gemini_Generated_Image_sl115msl115msl11.png"
+                alt="Equipo de ingenieros trabajando en planta industrial"
                 className="h-full w-full object-cover"
               />
             </div>
@@ -48,23 +48,24 @@ export function About() {
               Quiénes Somos
             </div>
             <h2 className="text-balance text-3xl font-bold tracking-tight text-[#1A2B4C] sm:text-4xl">
-              Profesionales comprometidos con la excelencia
+              Ingeniería y obra en campo, con equipos expertos
             </h2>
 
             <div className="mt-6 space-y-4 text-muted-foreground">
               <p className="leading-relaxed">
                 Maxwell S.A. es una empresa de ingeniería y servicios con sede en La Plata,
-                Buenos Aires. Nos especializamos en el desarrollo de proyectos integrales
-                para la industria del petróleo y gas, petroquímica, energía y construcción industrial.
+                Buenos Aires. Acompañamos a nuestros clientes en planta, desde la concepción
+                del proyecto hasta la puesta en marcha en sitio.
               </p>
               <p className="leading-relaxed">
-                Nuestro equipo multidisciplinario cuenta con amplia experiencia en gerenciamiento
-                de ingeniería, abarcando todas las especialidades técnicas necesarias para
-                llevar a cabo proyectos de alta complejidad.
+                Nuestro equipo multidisciplinario de ingenieros y técnicos trabaja codo a codo
+                en entornos industriales complejos, integrando procesos, instrumentación, mecánica,
+                electricidad y obra civil para asegurar soluciones confiables y seguras.
               </p>
               <p className="leading-relaxed">
-                Trabajamos bajo los lineamientos de la norma ISO 9001:2008, lo que nos permite garantizar la calidad
-                de nuestros procesos y la satisfacción de nuestros clientes.
+                Operamos bajo los lineamientos de la norma ISO 9001:2008, con foco en la mejora
+                continua y la trazabilidad de cada etapa, garantizando la calidad de nuestros
+                entregables y la satisfacción de los clientes.
               </p>
             </div>
           </div>
