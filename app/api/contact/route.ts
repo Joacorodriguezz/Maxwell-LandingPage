@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { Resend } from "resend"
 import { contactSchema } from "@/lib/validations/contact"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 // In-memory rate limiting: max 3 requests per IP per 10 minutes
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_MAX = 3
@@ -35,14 +33,33 @@ function getClientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req)
+  const requestId = crypto.randomUUID()
 
-  if (!checkRateLimit(ip)) {
+  const resendApiKey = process.env.RESEND_API_KEY
+  if (!resendApiKey) {
+    console.error("contact: missing RESEND_API_KEY", { requestId })
     return NextResponse.json(
-      { error: "Demasiadas solicitudes. Intente nuevamente en unos minutos." },
-      { status: 429 }
+      { error: "Configuración inválida del servidor.", requestId },
+      { status: 500 }
     )
   }
+
+  const resend = new Resend(resendApiKey)
+
+  // Modo test: por defecto usamos el remitente de sandbox de Resend
+  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
+  const fromName = process.env.RESEND_FROM_NAME ?? "Maxwell Web (Test)"
+  const internalTo = process.env.RESEND_INTERNAL_TO_EMAIL ?? "contacto@maxwellsa.com.ar"
+  const replyToInternal = process.env.RESEND_REPLY_TO_INTERNAL ?? internalTo
+
+  // Rate limiting deshabilitado temporalmente para pruebas
+  // const ip = getClientIp(req)
+  // if (!checkRateLimit(ip)) {
+  //   return NextResponse.json(
+  //     { error: "Demasiadas solicitudes. Intente nuevamente en unos minutos." },
+  //     { status: 429 }
+  //   )
+  // }
 
   let body: unknown
   try {
@@ -73,10 +90,12 @@ export async function POST(req: NextRequest) {
 
   const { nombre, empresa, email, telefono, asunto, mensaje } = result.data
 
+  // 1) Envío interno: si falla, no se envía confirmación al usuario
+  let internalOk = false
   try {
-    await resend.emails.send({
-      from: "Maxwell Web <no-reply@maxwellsa.com.ar>",
-      to: ["contacto@maxwellsa.com.ar"],
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: [internalTo],
       replyTo: email,
       subject: `[Maxwell Web] ${asunto}`,
       text: [
@@ -89,13 +108,50 @@ export async function POST(req: NextRequest) {
         mensaje,
       ].join("\n"),
     })
+
+    if (error) {
+      throw error
+    }
+
+    internalOk = true
+    console.info("contact: internal_sent", { requestId, id: data?.id })
   } catch (err) {
-    console.error("Resend error:", err)
+    console.error("contact: internal_send_failed", { requestId, err })
     return NextResponse.json(
       { error: "Error al enviar el mensaje. Intente nuevamente." },
       { status: 500 }
     )
   }
 
-  return NextResponse.json({ ok: true })
+  // 2) Confirmación al usuario: best-effort (no falla la request si esto falla)
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `${fromName} <${fromEmail}>`,
+      to: [email],
+      replyTo: replyToInternal,
+      subject: "Hemos recibido tu consulta - Maxwell (Test)",
+      text: [
+        `Hola ${nombre},`,
+        ``,
+        `Hemos recibido tu mensaje y nuestro equipo lo revisará a la brevedad.`,
+        ``,
+        `Asunto: ${asunto}`,
+        ``,
+        `Si necesitás contactarnos, podés escribirnos a ${replyToInternal}.`,
+        ``,
+        `Saludos,`,
+        `Equipo Maxwell`,
+      ].join("\n"),
+    })
+
+    if (error) {
+      throw error
+    }
+
+    console.info("contact: confirm_sent", { requestId, id: data?.id, internalOk })
+  } catch (err) {
+    console.warn("contact: confirm_send_failed", { requestId, internalOk, err })
+  }
+
+  return NextResponse.json({ ok: true, requestId })
 }
