@@ -28,28 +28,42 @@ function RevealText({
 
   return (
     <span className={className} aria-label={segments.map((s) => s.text).join("")}>
-      {segments.map((segment, si) => (
-        <span key={si} className={segment.className}>
-          {segment.text.split("").map((char) => {
-            const i = charIndex++
-            return (
-              <span
-                key={i}
-                style={{
-                  display: "inline-block",
-                  opacity: revealed ? 1 : 0,
-                  transform: revealed ? "translateX(0)" : "translateX(-8px)",
-                  transition: `opacity 0.4s ease ${i * letterDelay}ms, transform 0.4s ease ${i * letterDelay}ms`,
-                  minWidth: char === " " ? "0.25em" : undefined,
-                }}
-                aria-hidden
-              >
-                {char}
-              </span>
-            )
-          })}
-        </span>
-      ))}
+      {segments.map((segment, si) => {
+        // Split into words so the browser can wrap naturally between words
+        const words = segment.text.split(" ")
+        return (
+          <span key={si} className={segment.className}>
+            {words.map((word, wi) => {
+              const startIdx = charIndex
+              const letters = word.split("").map((char) => {
+                const i = charIndex++
+                return (
+                  <span
+                    key={i}
+                    style={{
+                      display: "inline-block",
+                      opacity: revealed ? 1 : 0,
+                      transform: revealed ? "translateX(0)" : "translateX(-8px)",
+                      transition: `opacity 0.4s ease ${i * letterDelay}ms, transform 0.4s ease ${i * letterDelay}ms`,
+                    }}
+                    aria-hidden
+                  >
+                    {char}
+                  </span>
+                )
+              })
+              // Count the space between words
+              if (wi < words.length - 1) charIndex++
+              return (
+                <span key={`w${startIdx}`} style={{ display: "inline-block", whiteSpace: "nowrap" }}>
+                  {letters}
+                  {wi < words.length - 1 && <span style={{ display: "inline-block", width: "0.3em" }}>&nbsp;</span>}
+                </span>
+              )
+            })}
+          </span>
+        )
+      })}
     </span>
   )
 }
@@ -170,7 +184,7 @@ export function Hero() {
         <div className="max-w-3xl">
           {/* H1 */}
           <h1
-            className="text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:text-7xl"
+            className="text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl"
           >
             <RevealText
               baseDelay={400}
@@ -184,7 +198,7 @@ export function Hero() {
 
           {/* Subtitle */}
           <p
-            className="hero-fade-up mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-white/80 sm:text-base md:text-lg lg:text-xl"
+            className="hero-fade-up mt-4 max-w-2xl text-pretty text-xs leading-relaxed text-white/80 sm:text-sm md:text-base lg:text-lg"
             style={{ animationDelay: "150ms" }}
           >
             Somos un grupo de profesionales y técnicos abocados a la elaboración

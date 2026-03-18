@@ -61,67 +61,73 @@ export function Quality() {
         <div ref={contentRef} className="mt-12 hidden md:block">
           {/* Step indicators with connecting line */}
           <div className="relative mx-auto flex max-w-2xl items-start justify-between">
-            {/* Connecting line (background) */}
-            <div className="absolute left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] top-8 h-[2px] bg-white/10" />
-            {/* Connecting line (progress) */}
-            <div
-              className="absolute left-[calc(16.67%+2rem)] top-8 h-[2px] bg-[#F26D21] transition-all duration-500"
-              style={{
-                width: `${activeIndex * 50}%`,
-                maxWidth: "calc(100% - 33.34% - 4rem)",
-                transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
-              }}
-            />
-
             {pillars.map((pillar, i) => {
               const Icon = pillar.icon
               const isActive = i === activeIndex
               const isPast = i < activeIndex
 
               return (
-                <button
-                  key={pillar.title}
-                  onClick={() => setActiveIndex(i)}
-                  className="group relative z-10 flex flex-1 flex-col items-center gap-3"
-                >
-                  {/* Circle */}
-                  <div
-                    className={`relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-all duration-400 ${
-                      isActive
-                        ? "scale-110 border-[#F26D21] bg-[#F26D21] shadow-lg shadow-[#F26D21]/30"
-                        : isPast
-                          ? "border-[#F26D21] bg-[#F26D21]/20"
-                          : "border-white/20 bg-white/5 group-hover:border-white/40"
-                    }`}
-                    style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
-                  >
-                    <Icon
-                      className={`h-6 w-6 transition-colors duration-300 ${
-                        isActive ? "text-white" : isPast ? "text-[#F26D21]" : "text-white/40 group-hover:text-white/60"
-                      }`}
-                    />
+                <div key={pillar.title} className="relative flex flex-1 flex-col items-center">
+                  {/* Connector line AFTER this circle (except the last) */}
+                  {i < pillars.length - 1 && (
+                    <div
+                      className="absolute left-[calc(50%+2.25rem)] right-[calc(-50%+2.25rem)] top-8 h-[2px]"
+                    >
+                      {/* Background line */}
+                      <div className="absolute inset-0 bg-white/10" />
+                      {/* Progress fill */}
+                      <div
+                        className={`absolute inset-y-0 left-0 bg-[#F26D21] transition-all duration-500 ${
+                          isPast ? "w-full" : "w-0"
+                        }`}
+                        style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+                      />
+                    </div>
+                  )}
 
-                    {/* Step number badge */}
+                  <button
+                    onClick={() => setActiveIndex(i)}
+                    className="group relative z-10 flex flex-col items-center gap-3"
+                  >
+                    {/* Circle */}
+                    <div
+                      className={`relative flex h-16 w-16 items-center justify-center rounded-full border-2 transition-all duration-400 ${
+                        isActive
+                          ? "scale-110 border-[#F26D21] bg-[#F26D21] shadow-lg shadow-[#F26D21]/30"
+                          : isPast
+                            ? "border-[#F26D21] bg-[#F26D21]/20"
+                            : "border-white/20 bg-white/5 group-hover:border-white/40"
+                      }`}
+                      style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+                    >
+                      <Icon
+                        className={`h-6 w-6 transition-colors duration-300 ${
+                          isActive ? "text-white" : isPast ? "text-[#F26D21]" : "text-white/40 group-hover:text-white/60"
+                        }`}
+                      />
+
+                      {/* Step number badge */}
+                      <span
+                        className={`absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-300 ${
+                          isActive || isPast
+                            ? "bg-[#F26D21] text-white"
+                            : "bg-white/10 text-white/40"
+                        }`}
+                      >
+                        {pillar.num}
+                      </span>
+                    </div>
+
+                    {/* Title */}
                     <span
-                      className={`absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold transition-all duration-300 ${
-                        isActive || isPast
-                          ? "bg-[#F26D21] text-white"
-                          : "bg-white/10 text-white/40"
+                      className={`text-sm font-semibold transition-colors duration-300 ${
+                        isActive ? "text-white" : "text-white/40 group-hover:text-white/60"
                       }`}
                     >
-                      {pillar.num}
+                      {pillar.title}
                     </span>
-                  </div>
-
-                  {/* Title */}
-                  <span
-                    className={`text-sm font-semibold transition-colors duration-300 ${
-                      isActive ? "text-white" : "text-white/40 group-hover:text-white/60"
-                    }`}
-                  >
-                    {pillar.title}
-                  </span>
-                </button>
+                  </button>
+                </div>
               )
             })}
           </div>
