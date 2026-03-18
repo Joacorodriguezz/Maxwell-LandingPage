@@ -124,39 +124,167 @@
   }
 }
 
-/* ── Scroll Reveal Animations ── */
-@keyframes reveal-up {
-  from { opacity: 0; transform: translateY(32px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes reveal-left {
-  from { opacity: 0; transform: translateX(-40px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes reveal-right {
-  from { opacity: 0; transform: translateX(40px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-@keyframes reveal-scale {
-  from { opacity: 0; transform: scale(0.93); }
-  to   { opacity: 1; transform: scale(1); }
-}
+/* ── Hero entrance (CSS-only, stagger via inline style) ── */
 @keyframes hero-fade-up {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-.reveal-hidden  { opacity: 0; }
-.reveal-up      { animation: reveal-up    0.65s cubic-bezier(0.16,1,0.3,1) both; }
-.reveal-left    { animation: reveal-left  0.65s cubic-bezier(0.16,1,0.3,1) both; }
-.reveal-right   { animation: reveal-right 0.65s cubic-bezier(0.16,1,0.3,1) both; }
-.reveal-scale   { animation: reveal-scale 0.65s cubic-bezier(0.16,1,0.3,1) both; }
-.hero-fade-up   { animation: hero-fade-up 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+.hero-fade-up {
+  animation: hero-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
 
-.delay-0   { animation-delay: 0ms; }
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
-.delay-600 { animation-delay: 600ms; }
+/* ── Diagonal hero element entrance ── */
+@keyframes diagonal-in {
+  from { opacity: 0; transform: scaleX(0); }
+  to   { opacity: 1; transform: scaleX(1); }
+}
+
+/* ── Contact: floating label ── */
+.field-wrap {
+  position: relative;
+}
+.field-wrap .float-label {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  transition: transform 200ms ease, font-size 200ms ease, color 200ms ease;
+  background: white;
+  padding: 0 4px;
+}
+.field-wrap.textarea-wrap .float-label {
+  top: 0.625rem;
+  transform: none;
+}
+.field-wrap input:focus ~ .float-label,
+.field-wrap input:not(:placeholder-shown) ~ .float-label,
+.field-wrap textarea:focus ~ .float-label,
+.field-wrap textarea:not(:placeholder-shown) ~ .float-label {
+  transform: translateY(-145%);
+  font-size: 0.72rem;
+  color: #F26D21;
+}
+.field-wrap.textarea-wrap input:focus ~ .float-label,
+.field-wrap.textarea-wrap textarea:focus ~ .float-label,
+.field-wrap.textarea-wrap textarea:not(:placeholder-shown) ~ .float-label {
+  transform: translateY(-100%);
+  font-size: 0.72rem;
+  color: #F26D21;
+}
+
+/* ── Contact: animated bottom border on inputs ── */
+.field-input {
+  border-bottom-color: var(--border);
+  transition: border-color 200ms ease;
+}
+.field-input:focus {
+  border-bottom-color: #F26D21;
+  outline: none;
+}
+
+/* ── Submit shimmer ── */
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+}
+.btn-shimmer:hover {
+  background-image: linear-gradient(
+    105deg,
+    #F26D21 0%,
+    #F26D21 40%,
+    #ff9a5c 50%,
+    #F26D21 60%,
+    #F26D21 100%
+  );
+  background-size: 200% auto;
+  animation: shimmer 1.2s linear infinite;
+}
+.btn-shimmer:active {
+  transform: scale(0.97);
+}
+
+/* ── Quality: horizontal accordion (desktop only) ── */
+.quality-accordion {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+}
+@media (max-width: 767px) {
+  .quality-accordion {
+    flex-direction: column;
+  }
+}
+@media (min-width: 768px) {
+  .quality-card {
+    flex: 0 0 auto;
+    max-width: 5.5rem;
+    overflow: hidden;
+    transition: max-width 400ms cubic-bezier(0.22, 1, 0.36, 1);
+    cursor: default;
+  }
+  .quality-card:hover,
+  .quality-card:focus-within {
+    max-width: 26rem;
+  }
+  /* Hide text content when collapsed */
+  .quality-card-body {
+    min-width: 18rem;
+    opacity: 0;
+    transition: opacity 250ms ease 0ms;
+  }
+  .quality-card:hover .quality-card-body,
+  .quality-card:focus-within .quality-card-body {
+    opacity: 1;
+    transition: opacity 200ms ease 200ms;
+  }
+  /* Title hidden when collapsed */
+  .quality-card-title {
+    opacity: 0;
+    transition: opacity 250ms ease 0ms;
+    white-space: nowrap;
+  }
+  .quality-card:hover .quality-card-title,
+  .quality-card:focus-within .quality-card-title {
+    opacity: 1;
+    transition: opacity 200ms ease 200ms;
+  }
+}
+
+/* ── About: orange line expands on row hover ── */
+@media (hover: hover) and (pointer: fine) {
+  .group:hover > div[style*="width: 3px"],
+  .group:hover > .w-\[3px\] {
+    width: 6px !important;
+  }
+}
+
+/* ── Services: hover lift (pointer only) ── */
+@media (hover: hover) and (pointer: fine) {
+  .service-card:hover {
+    transform: translateY(-4px);
+  }
+}
+
+/* ── Client card hover scale (pointer only) ── */
+@media (hover: hover) and (pointer: fine) {
+  .client-card:hover {
+    transform: scale(1.03);
+  }
+}
+
+/* ── Reduced motion: disable all transforms ── */
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade-up,
+  .service-card,
+  .client-card,
+  .quality-card,
+  .btn-shimmer:active {
+    animation: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

@@ -86,17 +86,13 @@ const services = [
 ]
 
 export function Services() {
-  const [headerRef, headerInView] = useInView()
-  const [gridRef, gridInView] = useInView()
+  const [headerRef] = useInView({ variant: "up" })
 
   return (
     <section id="servicios" className="bg-[#F8F9FA] pt-10 pb-20 lg:pt-14 lg:pb-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div
-          ref={headerRef}
-          className={`mx-auto max-w-3xl text-center ${headerInView ? "reveal-up" : "reveal-hidden"}`}
-        >
+        <div ref={headerRef} className="mx-auto max-w-3xl text-center">
           <div className="mb-4 inline-block rounded-full bg-[#F26D21]/10 px-4 py-1.5 text-sm font-semibold text-[#F26D21]">
             Gerencia de Ingeniería
           </div>
@@ -109,43 +105,60 @@ export function Services() {
           </p>
         </div>
 
-        {/* Services Grid */}
-        <div ref={gridRef} className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Bento Grid */}
+        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((service, i) => (
-            <div
-              key={service.title}
-              className={`group relative overflow-hidden rounded-xl bg-white p-6 shadow-sm transition-all hover:shadow-lg ${
-                gridInView ? "reveal-up" : "reveal-hidden"
-              }`}
-              style={gridInView ? { animationDelay: `${i * 100}ms` } : undefined}
-            >
-              {/* Top accent bar */}
-              <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-[#1A2B4C] to-[#F26D21] opacity-0 transition-opacity group-hover:opacity-100" />
-
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1A2B4C] text-white transition-colors group-hover:bg-[#F26D21]">
-                  <service.icon className="h-6 w-6" />
-                </div>
-                <h3 className="text-xl font-semibold text-[#1A2B4C]">
-                  {service.title}
-                </h3>
-              </div>
-
-              <ul className="space-y-2">
-                {service.items.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-2 text-sm text-muted-foreground"
-                  >
-                    <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#F26D21]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            <ServiceCard key={service.title} service={service} index={i} />
           ))}
         </div>
       </div>
     </section>
+  )
+}
+
+function ServiceCard({
+  service,
+  index,
+}: {
+  service: (typeof services)[0]
+  index: number
+}) {
+  const [ref] = useInView({ variant: "up", delay: index * 50, threshold: 0.1 })
+  const isFeature = index === 0
+
+  return (
+    <div
+      ref={ref}
+      className={`service-card group relative overflow-hidden rounded-xl bg-white shadow-sm transition-[transform,box-shadow] duration-300 ${
+        isFeature ? "sm:col-span-2 lg:col-span-2" : ""
+      }`}
+      style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* Top accent bar */}
+      <div className="absolute left-0 top-0 h-[3px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#1A2B4C] to-[#F26D21] transition-transform duration-300 group-hover:scale-x-100" style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }} />
+
+      <div className={`p-6 ${isFeature ? "sm:p-8" : ""}`}>
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1A2B4C] text-white transition-colors duration-200 group-hover:bg-[#F26D21]">
+            <service.icon className="h-6 w-6" />
+          </div>
+          <h3 className={`font-semibold text-[#1A2B4C] ${isFeature ? "text-2xl" : "text-xl"}`}>
+            {service.title}
+          </h3>
+        </div>
+
+        <ul className={`space-y-2 ${isFeature ? "sm:grid sm:grid-cols-2 sm:gap-x-6 sm:space-y-0" : ""}`}>
+          {service.items.map((item) => (
+            <li
+              key={item}
+              className="flex items-start gap-2 text-sm text-muted-foreground"
+            >
+              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#F26D21]" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   )
 }

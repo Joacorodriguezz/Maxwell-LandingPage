@@ -3,8 +3,6 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { MapPin, Phone, Mail, Send, CheckCircle, AlertCircle } from "lucide-react"
 import { useInView } from "@/hooks/use-in-view"
 import { contactSchema, type ContactFormData } from "@/lib/validations/contact"
@@ -13,11 +11,41 @@ const contactEmails = [
   { area: "Contacto General", email: "contacto@maxwellsa.com.ar" },
 ]
 
+// Floating-label field wrapper
+function FloatField({
+  id,
+  label,
+  required,
+  error,
+  children,
+  isTextarea,
+}: {
+  id: string
+  label: string
+  required?: boolean
+  error?: string
+  children: React.ReactNode
+  isTextarea?: boolean
+}) {
+  return (
+    <div>
+      <div className={`field-wrap${isTextarea ? " textarea-wrap" : ""}`}>
+        {children}
+        <label htmlFor={id} className="float-label">
+          {label}{required ? " *" : ""}
+        </label>
+      </div>
+      {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+    </div>
+  )
+}
+
 export function Contact() {
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
 
-  const [headerRef, headerInView] = useInView()
-  const [contentRef, contentInView] = useInView()
+  const [headerRef] = useInView({ variant: "up" })
+  const [formRef] = useInView({ variant: "left", delay: 80 })
+  const [infoRef] = useInView({ variant: "right", delay: 120 })
 
   const {
     register,
@@ -41,8 +69,6 @@ export function Contact() {
       if (res.ok) {
         setSubmitStatus("success")
         reset()
-      } else if (res.status === 429) {
-        setSubmitStatus("error")
       } else {
         setSubmitStatus("error")
       }
@@ -51,14 +77,14 @@ export function Contact() {
     }
   }
 
+  const inputCls =
+    "w-full rounded-md border border-input bg-background px-3 pb-2 pt-5 text-sm placeholder-transparent focus:outline-none focus:border-[#F26D21] focus:ring-0 aria-[invalid=true]:border-red-500 transition-[border-color] duration-200"
+
   return (
     <section id="contacto" className="bg-[#F8F9FA] pt-10 pb-20 lg:pt-14 lg:pb-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div
-          ref={headerRef}
-          className={`mx-auto max-w-3xl text-center ${headerInView ? "reveal-up" : "reveal-hidden"}`}
-        >
+        <div ref={headerRef} className="mx-auto max-w-3xl text-center">
           <div className="mb-4 inline-block rounded-full bg-[#F26D21]/10 px-4 py-1.5 text-sm font-semibold text-[#F26D21]">
             Contacto
           </div>
@@ -71,13 +97,9 @@ export function Contact() {
           </p>
         </div>
 
-        <div ref={contentRef} className="mt-16 grid gap-12 lg:grid-cols-2">
+        <div className="mt-16 grid gap-12 lg:grid-cols-2">
           {/* Contact Form */}
-          <div
-            className={`rounded-xl bg-white p-8 shadow-sm ${
-              contentInView ? "reveal-left delay-100" : "reveal-hidden"
-            }`}
-          >
+          <div ref={formRef} className="rounded-xl bg-white p-8 shadow-sm">
             <h3 className="mb-6 text-xl font-semibold text-[#1A2B4C]">
               Envíanos un mensaje
             </h3>
@@ -101,126 +123,92 @@ export function Contact() {
             )}
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-              {/* Honeypot — hidden from humans, filled by bots */}
+              {/* Honeypot */}
               <div
                 aria-hidden="true"
-                style={{ position: "absolute", opacity: 0, pointerEvents: "none", tabIndex: -1 }}
+                style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
               >
                 <label htmlFor="website">No completar</label>
                 <input id="website" type="text" autoComplete="off" tabIndex={-1} {...register("website")} />
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="nombre" className="mb-2 block text-sm font-medium text-foreground">
-                    Nombre *
-                  </label>
-                  <Input
+                <FloatField id="nombre" label="Nombre" required error={errors.nombre?.message}>
+                  <input
                     id="nombre"
                     placeholder="Tu nombre"
                     aria-invalid={!!errors.nombre}
+                    className={inputCls}
                     {...register("nombre")}
                   />
-                  {errors.nombre && (
-                    <p className="mt-1 text-xs text-red-600">{errors.nombre.message}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="empresa" className="mb-2 block text-sm font-medium text-foreground">
-                    Empresa
-                  </label>
-                  <Input
+                </FloatField>
+                <FloatField id="empresa" label="Empresa" error={errors.empresa?.message}>
+                  <input
                     id="empresa"
                     placeholder="Tu empresa"
                     aria-invalid={!!errors.empresa}
+                    className={inputCls}
                     {...register("empresa")}
                   />
-                  {errors.empresa && (
-                    <p className="mt-1 text-xs text-red-600">{errors.empresa.message}</p>
-                  )}
-                </div>
+                </FloatField>
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
-                    Email *
-                  </label>
-                  <Input
+                <FloatField id="email" label="Email" required error={errors.email?.message}>
+                  <input
                     id="email"
                     type="email"
                     placeholder="tu@email.com"
                     aria-invalid={!!errors.email}
+                    className={inputCls}
                     {...register("email")}
                   />
-                  {errors.email && (
-                    <p className="mt-1 text-xs text-red-600">{errors.email.message}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="telefono" className="mb-2 block text-sm font-medium text-foreground">
-                    Teléfono
-                  </label>
-                  <Input
+                </FloatField>
+                <FloatField id="telefono" label="Teléfono" error={errors.telefono?.message}>
+                  <input
                     id="telefono"
                     placeholder="Tu teléfono"
                     aria-invalid={!!errors.telefono}
+                    className={inputCls}
                     {...register("telefono")}
                   />
-                  {errors.telefono && (
-                    <p className="mt-1 text-xs text-red-600">{errors.telefono.message}</p>
-                  )}
-                </div>
+                </FloatField>
               </div>
 
-              <div>
-                <label htmlFor="asunto" className="mb-2 block text-sm font-medium text-foreground">
-                  Asunto *
-                </label>
-                <Input
+              <FloatField id="asunto" label="Asunto" required error={errors.asunto?.message}>
+                <input
                   id="asunto"
                   placeholder="¿En qué podemos ayudarte?"
                   aria-invalid={!!errors.asunto}
+                  className={inputCls}
                   {...register("asunto")}
                 />
-                {errors.asunto && (
-                  <p className="mt-1 text-xs text-red-600">{errors.asunto.message}</p>
-                )}
-              </div>
+              </FloatField>
 
-              <div>
-                <label htmlFor="mensaje" className="mb-2 block text-sm font-medium text-foreground">
-                  Mensaje *
-                </label>
+              <FloatField id="mensaje" label="Mensaje" required error={errors.mensaje?.message} isTextarea>
                 <textarea
                   id="mensaje"
                   rows={4}
                   placeholder="Cuéntanos sobre tu proyecto..."
                   aria-invalid={!!errors.mensaje}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-red-500"
+                  className="w-full rounded-md border border-input bg-background px-3 pb-2 pt-6 text-sm placeholder-transparent focus:outline-none focus:border-[#F26D21] focus:ring-0 aria-[invalid=true]:border-red-500 transition-[border-color] duration-200"
                   {...register("mensaje")}
                 />
-                {errors.mensaje && (
-                  <p className="mt-1 text-xs text-red-600">{errors.mensaje.message}</p>
-                )}
-              </div>
+              </FloatField>
 
-              <Button
+              <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-[#F26D21] text-white hover:bg-[#D85A15] disabled:opacity-60"
+                className="btn-shimmer flex w-full items-center justify-center gap-2 rounded-md bg-[#F26D21] px-4 py-2.5 text-sm font-medium text-white transition-[background-color] duration-200 hover:bg-[#D85A15] disabled:opacity-60"
               >
-                <Send className="mr-2 h-4 w-4" />
+                <Send className="h-4 w-4" />
                 {isSubmitting ? "Enviando..." : "Enviar mensaje"}
-              </Button>
+              </button>
             </form>
           </div>
 
           {/* Contact Info */}
-          <div
-            className={`space-y-8 ${contentInView ? "reveal-right delay-200" : "reveal-hidden"}`}
-          >
-            {/* Address Card */}
+          <div ref={infoRef} className="space-y-8">
             <div className="rounded-xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1A2B4C] text-white">
@@ -235,7 +223,6 @@ export function Contact() {
               </p>
             </div>
 
-            {/* Phone Card */}
             <div className="rounded-xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1A2B4C] text-white">
@@ -244,18 +231,11 @@ export function Contact() {
                 <h4 className="font-semibold text-[#1A2B4C]">Teléfonos</h4>
               </div>
               <div className="space-y-2 text-muted-foreground">
-                <p>
-                  <span className="font-medium text-foreground">Oficina:</span>{" "}
-                  0221-4896360
-                </p>
-                <p>
-                  <span className="font-medium text-foreground">Móvil:</span>{" "}
-                  0221-15-4978097
-                </p>
+                <p><span className="font-medium text-foreground">Oficina:</span> 0221-4896360</p>
+                <p><span className="font-medium text-foreground">Móvil:</span> 0221-15-4978097</p>
               </div>
             </div>
 
-            {/* Emails Card */}
             <div className="rounded-xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#1A2B4C] text-white">
