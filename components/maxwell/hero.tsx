@@ -5,6 +5,55 @@ import { Button } from "@/components/ui/button"
 import { ChevronRight } from "lucide-react"
 import { useInView } from "@/hooks/use-in-view"
 
+// Letter-by-letter reveal
+function RevealText({
+  segments,
+  baseDelay = 300,
+  letterDelay = 40,
+  className,
+}: {
+  segments: { text: string; className?: string }[]
+  baseDelay?: number
+  letterDelay?: number
+  className?: string
+}) {
+  const [revealed, setRevealed] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setRevealed(true), baseDelay)
+    return () => clearTimeout(t)
+  }, [baseDelay])
+
+  let charIndex = 0
+
+  return (
+    <span className={className} aria-label={segments.map((s) => s.text).join("")}>
+      {segments.map((segment, si) => (
+        <span key={si} className={segment.className}>
+          {segment.text.split("").map((char) => {
+            const i = charIndex++
+            return (
+              <span
+                key={i}
+                style={{
+                  display: "inline-block",
+                  opacity: revealed ? 1 : 0,
+                  transform: revealed ? "translateX(0)" : "translateX(-8px)",
+                  transition: `opacity 0.4s ease ${i * letterDelay}ms, transform 0.4s ease ${i * letterDelay}ms`,
+                  minWidth: char === " " ? "0.25em" : undefined,
+                }}
+                aria-hidden
+              >
+                {char}
+              </span>
+            )
+          })}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 // Animated counter
 function useCounter(target: number, active: boolean, duration = 1200) {
   const [value, setValue] = useState(0)
@@ -57,12 +106,12 @@ function StatCounter({
 
   return (
     <div>
-      <div className="text-3xl font-bold text-[#F26D21] sm:text-4xl">
+      <div className="text-2xl font-bold text-[#F26D21] sm:text-3xl md:text-4xl">
         {prefix}
         {value !== null ? count : "ISO"}
         {suffix}
       </div>
-      <div className="mt-1 text-sm text-white/60">{label}</div>
+      <div className="mt-1 text-xs text-white/60 sm:text-sm">{label}</div>
     </div>
   )
 }
@@ -102,15 +151,15 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#1A2B4C]/95 via-[#1A2B4C]/85 to-[#1A2B4C]/70" />
       </div>
 
-      {/* Diagonal Orange Elements — animated entrance */}
+      {/* Diagonal Orange Elements — animated entrance (hidden on small screens) */}
       <div
-        className="absolute -right-20 bottom-0 h-64 w-[600px] origin-bottom-right -skew-x-12 bg-[#F26D21]/20 md:h-80 md:w-[800px]"
+        className="absolute -right-20 bottom-0 hidden h-80 w-[800px] origin-bottom-right -skew-x-12 bg-[#F26D21]/20 md:block"
         style={{
           animation: "diagonal-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.4s both",
         }}
       />
       <div
-        className="absolute -right-10 bottom-0 h-48 w-[500px] origin-bottom-right -skew-x-12 bg-[#F26D21]/30 md:h-64 md:w-[700px]"
+        className="absolute -right-10 bottom-0 hidden h-64 w-[700px] origin-bottom-right -skew-x-12 bg-[#F26D21]/30 md:block"
         style={{
           animation: "diagonal-in 1s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both",
         }}
@@ -121,16 +170,21 @@ export function Hero() {
         <div className="max-w-3xl">
           {/* H1 */}
           <h1
-            className="hero-fade-up text-balance text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl"
-            style={{ animationDelay: "100ms" }}
+            className="text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl md:text-5xl lg:text-7xl"
           >
-            Ingeniería y Obra de{" "}
-            <span className="text-[#F26D21]">Alta Complejidad</span>
+            <RevealText
+              baseDelay={400}
+              letterDelay={40}
+              segments={[
+                { text: "Ingeniería y Obra de " },
+                { text: "Alta Complejidad", className: "text-[#F26D21]" },
+              ]}
+            />
           </h1>
 
           {/* Subtitle */}
           <p
-            className="hero-fade-up mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-white/80 sm:text-xl"
+            className="hero-fade-up mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-white/80 sm:text-base md:text-lg lg:text-xl"
             style={{ animationDelay: "150ms" }}
           >
             Somos un grupo de profesionales y técnicos abocados a la elaboración
@@ -146,7 +200,7 @@ export function Hero() {
             <Button
               asChild
               size="lg"
-              className="bg-[#F26D21] text-lg text-white hover:bg-[#D85A15]"
+              className="bg-[#F26D21] text-sm text-white hover:bg-[#D85A15] sm:text-base md:text-lg"
             >
               <a href="#servicios" className="flex items-center gap-2">
                 Conocé nuestros servicios
@@ -157,7 +211,7 @@ export function Hero() {
               asChild
               variant="outline"
               size="lg"
-              className="border-white/30 bg-transparent text-lg text-white hover:bg-white/10 hover:text-white"
+              className="border-white/30 bg-transparent text-sm text-white hover:bg-white/10 hover:text-white sm:text-base md:text-lg"
             >
               <a href="#contacto">Contactanos</a>
             </Button>
@@ -166,7 +220,7 @@ export function Hero() {
           {/* Stats — counter animation */}
           <div
             ref={statsRef}
-            className="hero-fade-up mt-16 grid grid-cols-3 gap-8 border-t border-white/10 pt-8"
+            className="hero-fade-up mt-10 grid grid-cols-3 gap-4 border-t border-white/10 pt-6 sm:mt-16 sm:gap-8 sm:pt-8"
             style={{ animationDelay: "250ms" }}
           >
             <StatCounter value={100} prefix="+" label="Obras para YPF" active={statsInView} delay={0} />

@@ -45,6 +45,7 @@ function ClientCard({ client }: { client: typeof clients[0] }) {
 export function Clients() {
   const [headerRef] = useInView({ variant: "up" })
   const [ypfRef] = useInView({ variant: "up", delay: 80 })
+  const [numberRef] = useInView({ variant: "up", delay: 160 })
   const [marqueeRef] = useInView({ variant: "up", delay: 120, threshold: 0.1 })
 
   return (
@@ -70,11 +71,12 @@ export function Clients() {
             {/* Left thick orange border */}
             <div className="w-2 flex-none bg-[#F26D21]" />
 
-            <div className="flex flex-1 flex-col justify-center gap-1 px-8 py-8 sm:flex-row sm:items-center sm:gap-10">
+            <div className="flex flex-1 flex-col justify-center gap-1 px-5 py-5 sm:flex-row sm:items-center sm:gap-10 sm:px-8 sm:py-8">
               {/* Big number */}
               <div
+                ref={numberRef}
                 className="flex-none font-black leading-none text-[#1A2B4C]"
-                style={{ fontSize: "clamp(5rem, 15vw, 10rem)" }}
+                style={{ fontSize: "clamp(2.5rem, 8vw, 6rem)" }}
                 aria-label="Más de 100 obras"
               >
                 <span className="text-[#F26D21]">+</span>100
@@ -82,11 +84,11 @@ export function Clients() {
 
               {/* Text */}
               <div className="flex flex-col gap-1">
-                <p className="text-xl font-semibold text-[#1A2B4C] sm:text-2xl">
+                <p className="text-base font-semibold text-[#1A2B4C] sm:text-2xl">
                   obras realizadas para YPF S.A.
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  Nuestro principal cliente desde hace más de 30 años
+                  Nuestro principal cliente desde hace más de 10 años
                 </p>
               </div>
             </div>

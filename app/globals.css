@@ -207,52 +207,7 @@
   transform: scale(0.97);
 }
 
-/* ── Quality: horizontal accordion (desktop only) ── */
-.quality-accordion {
-  display: flex;
-  gap: 1rem;
-  align-items: stretch;
-}
-@media (max-width: 767px) {
-  .quality-accordion {
-    flex-direction: column;
-  }
-}
-@media (min-width: 768px) {
-  .quality-card {
-    flex: 0 0 auto;
-    max-width: 5.5rem;
-    overflow: hidden;
-    transition: max-width 400ms cubic-bezier(0.22, 1, 0.36, 1);
-    cursor: default;
-  }
-  .quality-card:hover,
-  .quality-card:focus-within {
-    max-width: 26rem;
-  }
-  /* Hide text content when collapsed */
-  .quality-card-body {
-    min-width: 18rem;
-    opacity: 0;
-    transition: opacity 250ms ease 0ms;
-  }
-  .quality-card:hover .quality-card-body,
-  .quality-card:focus-within .quality-card-body {
-    opacity: 1;
-    transition: opacity 200ms ease 200ms;
-  }
-  /* Title hidden when collapsed */
-  .quality-card-title {
-    opacity: 0;
-    transition: opacity 250ms ease 0ms;
-    white-space: nowrap;
-  }
-  .quality-card:hover .quality-card-title,
-  .quality-card:focus-within .quality-card-title {
-    opacity: 1;
-    transition: opacity 200ms ease 200ms;
-  }
-}
+/* ── (Quality old accordion styles removed — now uses stepper) ── */
 
 /* ── About: orange line expands on row hover ── */
 @media (hover: hover) and (pointer: fine) {
@@ -262,11 +217,14 @@
   }
 }
 
-/* ── Services: hover lift (pointer only) ── */
-@media (hover: hover) and (pointer: fine) {
-  .service-card:hover {
-    transform: translateY(-4px);
-  }
+/* ── Services: carousel content fade-in ── */
+@keyframes service-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-service-fade-in {
+  animation: service-fade-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ── Client card hover scale (pointer only) ── */

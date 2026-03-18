@@ -37,18 +37,26 @@ export function Header() {
   const [activeSection, setActiveSection] = useState("inicio")
   const [scrollProgress, setScrollProgress] = useState(0)
   const [clickedLink, setClickedLink] = useState<string | null>(null)
-  const [shrunk, setShrunk] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [isLg, setIsLg] = useState(false)
   const isUserScrolling = useRef(false)
-  const lastScrollY = useRef(0)
 
-  // Scroll progress + shrink on down
+  // Track screen size
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)")
+    setIsLg(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsLg(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
+
+  // Scroll progress + shrink detection
   useEffect(() => {
     function handleScroll() {
       const scrollTop = window.scrollY
       const maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight
       setScrollProgress(maxScroll > 0 ? scrollTop / maxScroll : 0)
-      setShrunk(scrollTop > lastScrollY.current && scrollTop > 80)
-      lastScrollY.current = scrollTop
+      setScrolled(scrollTop > 50)
     }
     window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
@@ -104,9 +112,6 @@ export function Header() {
   return (
     <header
       className="sticky top-0 z-50 bg-[#1A2B4C] text-white shadow-lg"
-      style={{
-        transition: "height 300ms ease",
-      }}
     >
       {/* Scroll progress bar */}
       <div
@@ -117,11 +122,8 @@ export function Header() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
-          className="flex items-center justify-between"
-          style={{
-            height: shrunk ? "3rem" : "5rem",
-            transition: "height 300ms ease",
-          }}
+          className="flex items-center justify-between transition-[height] duration-300"
+          style={{ height: isLg ? (scrolled ? "3.5rem" : "5rem") : "3.5rem" }}
         >
           {/* Logo */}
           <a
@@ -134,11 +136,11 @@ export function Header() {
               alt="Maxwell S.A."
               width={400}
               height={100}
+              className="transition-[height] duration-300"
               style={{
-                height: shrunk ? "2.5rem" : "5rem",
+                height: isLg ? (scrolled ? "2.8rem" : "5rem") : "2.5rem",
                 width: "auto",
                 objectFit: "contain",
-                transition: "height 300ms ease",
               }}
               priority
             />

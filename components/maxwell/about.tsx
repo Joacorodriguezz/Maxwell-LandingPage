@@ -29,30 +29,30 @@ export function About() {
   const [textRef] = useInView({ variant: "right", delay: 80 })
 
   return (
-    <section id="quienes-somos" className="bg-white pt-10 pb-20 lg:pt-14 lg:pb-28">
+    <section id="quienes-somos" className="bg-white pt-8 pb-12 lg:pt-10 lg:pb-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-10">
           {/* Image */}
           <div ref={imgRef} className="relative">
-            <div className="aspect-[4/3] overflow-hidden rounded-lg bg-muted">
+            <div className="aspect-[3/2] overflow-hidden rounded-lg bg-muted">
               <img
                 src="/Gemini_Generated_Image_sl115msl115msl11.png"
                 alt="Equipo de ingenieros trabajando en planta industrial"
                 className="h-full w-full object-cover"
               />
             </div>
-            <div className="absolute -bottom-6 -right-6 -z-10 h-full w-full rounded-lg bg-[#F26D21]/10" />
+            <div className="absolute -bottom-4 -right-4 -z-10 hidden h-full w-full rounded-lg bg-[#F26D21]/10 lg:block" />
           </div>
 
           {/* Content */}
           <div ref={textRef}>
-            <div className="mb-4 inline-block rounded-full bg-[#F26D21]/10 px-4 py-1.5 text-sm font-semibold text-[#F26D21]">
+            <div className="mb-3 inline-block rounded-full bg-[#F26D21]/10 px-4 py-1 text-sm font-semibold text-[#F26D21]">
               Quiénes Somos
             </div>
-            <h2 className="text-balance text-3xl font-bold tracking-tight text-[#1A2B4C] sm:text-4xl">
+            <h2 className="text-balance text-2xl font-bold tracking-tight text-[#1A2B4C] sm:text-3xl">
               Ingeniería y obra en campo, con equipos expertos
             </h2>
-            <div className="mt-6 space-y-4 text-muted-foreground">
+            <div className="mt-3 space-y-2.5 text-sm text-muted-foreground">
               <p className="leading-relaxed">
                 Maxwell S.A. es una empresa de ingeniería y servicios con sede en La Plata,
                 Buenos Aires. Acompañamos a nuestros clientes en planta, desde la concepción
@@ -72,10 +72,10 @@ export function About() {
           </div>
         </div>
 
-        {/* Feature Rows */}
-        <div className="mt-20 flex flex-col divide-y divide-border">
+        {/* Feature Cards — 3 columns */}
+        <div className="mt-10 grid gap-4 sm:grid-cols-3">
           {highlights.map((item, i) => (
-            <FeatureRow key={item.title} item={item} delay={i * 50} />
+            <FeatureCard key={item.title} item={item} index={i} />
           ))}
         </div>
       </div>
@@ -83,47 +83,35 @@ export function About() {
   )
 }
 
-function FeatureRow({
+function FeatureCard({
   item,
-  delay,
+  index,
 }: {
   item: (typeof highlights)[0]
-  delay: number
+  index: number
 }) {
-  const [ref] = useInView({ variant: "up", delay })
+  const [ref] = useInView({ variant: "up", delay: index * 60 })
 
   return (
     <div
       ref={ref}
-      className="group relative flex items-start gap-5 py-8 sm:gap-8"
+      className="group relative overflow-hidden rounded-xl border border-border bg-[#F8F9FA] p-5 transition-shadow duration-300 hover:shadow-md"
     >
       {/* Number watermark */}
       <span
-        className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 select-none text-[5rem] font-black leading-none text-[#1A2B4C]/[0.05] sm:text-[7rem]"
+        className="pointer-events-none absolute -bottom-3 right-2 select-none text-[4.5rem] font-black leading-none text-[#1A2B4C]/[0.04]"
         aria-hidden
       >
         {item.num}
       </span>
 
-      {/* Orange left line — expands width on hover */}
-      <div
-        className="mt-1 hidden h-full w-[3px] flex-none self-stretch rounded-full bg-[#F26D21] sm:block"
-        style={{
-          transition: "width 300ms cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
-      />
-
-      {/* Content */}
-      <div className="flex flex-1 items-start gap-5">
-        {/* Icon */}
-        <div className="mt-0.5 flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-[#1A2B4C] text-white transition-colors duration-200 group-hover:bg-[#F26D21]">
+      <div className="relative flex items-start gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1A2B4C] text-white transition-colors duration-200 group-hover:bg-[#F26D21]">
           <item.icon className="h-5 w-5" />
         </div>
-
-        {/* Text */}
         <div>
-          <h3 className="text-lg font-semibold text-[#1A2B4C]">{item.title}</h3>
-          <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          <h3 className="text-sm font-semibold text-[#1A2B4C]">{item.title}</h3>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {item.description}
           </p>
         </div>

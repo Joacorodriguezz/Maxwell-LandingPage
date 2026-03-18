@@ -1,12 +1,15 @@
 "use client"
 
+import { useState, useEffect, useCallback } from "react"
 import {
   Droplets,
   Gauge,
   Wrench,
   Zap,
   Waves,
-  Building
+  Building,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { useInView } from "@/hooks/use-in-view"
 
@@ -87,9 +90,47 @@ const services = [
 
 export function Services() {
   const [headerRef] = useInView({ variant: "up" })
+  const [contentRef] = useInView({ variant: "up", delay: 150 })
+  const [activeIndex, setActiveIndex] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const [fadeKey, setFadeKey] = useState(0)
+
+  // Auto-rotate every 5s
+  useEffect(() => {
+    if (isPaused) return
+    const id = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % services.length)
+      setFadeKey((k) => k + 1)
+    }, 5000)
+    return () => clearInterval(id)
+  }, [isPaused])
+
+  const goTo = useCallback((index: number) => {
+    setActiveIndex(index)
+    setFadeKey((k) => k + 1)
+    setIsPaused(true)
+  }, [])
+
+  // Resume auto-play after 10s of inactivity
+  useEffect(() => {
+    if (!isPaused) return
+    const id = setTimeout(() => setIsPaused(false), 10000)
+    return () => clearTimeout(id)
+  }, [isPaused])
+
+  const prev = useCallback(() => {
+    goTo((activeIndex - 1 + services.length) % services.length)
+  }, [activeIndex, goTo])
+
+  const next = useCallback(() => {
+    goTo((activeIndex + 1) % services.length)
+  }, [activeIndex, goTo])
+
+  const active = services[activeIndex]
+  const Icon = active.icon
 
   return (
-    <section id="servicios" className="bg-[#F8F9FA] pt-10 pb-20 lg:pt-14 lg:pb-28">
+    <section id="servicios" className="bg-[#F8F9FA] pt-10 pb-14 lg:pt-12 lg:pb-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div ref={headerRef} className="mx-auto max-w-3xl text-center">
@@ -99,66 +140,146 @@ export function Services() {
           <h2 className="text-balance text-3xl font-bold tracking-tight text-[#1A2B4C] sm:text-4xl">
             Nuestros Servicios
           </h2>
-          <p className="mt-4 text-pretty text-lg text-muted-foreground">
+          <p className="mt-3 text-pretty text-base text-muted-foreground">
             Ofrecemos un servicio integral de ingeniería que abarca todas las
             disciplinas necesarias para el desarrollo exitoso de su proyecto.
           </p>
         </div>
 
-        {/* Bento Grid */}
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service, i) => (
-            <ServiceCard key={service.title} service={service} index={i} />
-          ))}
+        {/* Desktop: tabs + content panel */}
+        <div
+          ref={contentRef}
+          className="mt-10 hidden md:flex gap-5"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          {/* Left tab list */}
+          <div className="flex w-56 shrink-0 flex-col gap-1.5">
+            {services.map((service, i) => {
+              const TabIcon = service.icon
+              const isActive = i === activeIndex
+              return (
+                <button
+                  key={service.title}
+                  onClick={() => goTo(i)}
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-left transition-all duration-300 ${
+                    isActive
+                      ? "bg-[#1A2B4C] text-white shadow-lg shadow-[#1A2B4C]/25"
+                      : "bg-white text-[#1A2B4C] shadow-sm hover:shadow-md"
+                  }`}
+                  style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
+                >
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-300 ${
+                      isActive ? "bg-[#F26D21]" : "bg-[#1A2B4C]/10"
+                    }`}
+                  >
+                    <TabIcon
+                      className={`h-5 w-5 transition-colors duration-300 ${
+                        isActive ? "text-white" : "text-[#1A2B4C]"
+                      }`}
+                    />
+                  </div>
+                  <span className="text-sm font-semibold leading-tight">{service.title}</span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Right content card */}
+          <div className="relative flex-1 rounded-2xl border-[3px] border-[#F26D21] p-1">
+            <div className="h-full rounded-xl bg-[#1A2B4C] p-6 lg:p-8">
+              <div key={fadeKey} className="flex h-full gap-6 animate-service-fade-in">
+                {/* Large icon */}
+                <div className="hidden lg:flex h-36 w-36 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/5">
+                  <Icon className="h-16 w-16 text-white/70" strokeWidth={1.2} />
+                </div>
+
+                {/* Text content */}
+                <div className="flex flex-1 flex-col justify-center">
+                  <h3 className="mb-3 text-xl font-bold text-white lg:text-2xl">
+                    {active.title}
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {active.items.map((item) => (
+                      <li
+                        key={item}
+                        className="flex items-start gap-2.5 text-white/80"
+                      >
+                        <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F26D21]" />
+                        <span className="text-sm">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile: single card carousel */}
+        <div
+          className="mt-10 md:hidden"
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => setIsPaused(true)}
+        >
+          <div className="rounded-2xl border-[3px] border-[#F26D21] p-1">
+            <div key={fadeKey} className="rounded-xl bg-[#1A2B4C] p-6 animate-service-fade-in">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F26D21]">
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white">{active.title}</h3>
+              </div>
+              <ul className="space-y-2">
+                {active.items.map((item) => (
+                  <li
+                    key={item}
+                    className="flex items-start gap-2 text-sm text-white/80"
+                  >
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F26D21]" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation dots & arrows */}
+        <div className="mt-5 flex items-center justify-center gap-4">
+          <button
+            onClick={prev}
+            aria-label="Servicio anterior"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#1A2B4C]/60 transition-colors hover:bg-[#1A2B4C]/10 hover:text-[#1A2B4C]"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <div className="flex items-center gap-2">
+            {services.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Ir a ${services[i].title}`}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  i === activeIndex
+                    ? "w-8 bg-[#F26D21]"
+                    : "w-2.5 bg-[#1A2B4C]/20 hover:bg-[#1A2B4C]/40"
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={next}
+            aria-label="Siguiente servicio"
+            className="flex h-9 w-9 items-center justify-center rounded-full text-[#1A2B4C]/60 transition-colors hover:bg-[#1A2B4C]/10 hover:text-[#1A2B4C]"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </section>
-  )
-}
-
-function ServiceCard({
-  service,
-  index,
-}: {
-  service: (typeof services)[0]
-  index: number
-}) {
-  const [ref] = useInView({ variant: "up", delay: index * 50, threshold: 0.1 })
-  const isFeature = index === 0
-
-  return (
-    <div
-      ref={ref}
-      className={`service-card group relative overflow-hidden rounded-xl bg-white shadow-sm transition-[transform,box-shadow] duration-300 ${
-        isFeature ? "sm:col-span-2 lg:col-span-2" : ""
-      }`}
-      style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }}
-    >
-      {/* Top accent bar */}
-      <div className="absolute left-0 top-0 h-[3px] w-full origin-left scale-x-0 bg-gradient-to-r from-[#1A2B4C] to-[#F26D21] transition-transform duration-300 group-hover:scale-x-100" style={{ transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)" }} />
-
-      <div className={`p-6 ${isFeature ? "sm:p-8" : ""}`}>
-        <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#1A2B4C] text-white transition-colors duration-200 group-hover:bg-[#F26D21]">
-            <service.icon className="h-6 w-6" />
-          </div>
-          <h3 className={`font-semibold text-[#1A2B4C] ${isFeature ? "text-2xl" : "text-xl"}`}>
-            {service.title}
-          </h3>
-        </div>
-
-        <ul className={`space-y-2 ${isFeature ? "sm:grid sm:grid-cols-2 sm:gap-x-6 sm:space-y-0" : ""}`}>
-          {service.items.map((item) => (
-            <li
-              key={item}
-              className="flex items-start gap-2 text-sm text-muted-foreground"
-            >
-              <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-[#F26D21]" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
   )
 }
