@@ -224,24 +224,38 @@ export function Services() {
           onTouchEnd={() => setIsPaused(true)}
         >
           <div className="rounded-2xl border-[3px] border-[#F26D21] p-1">
-            <div key={fadeKey} className="rounded-xl bg-[#1A2B4C] p-6 animate-service-fade-in">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F26D21]">
-                  <Icon className="h-6 w-6 text-white" />
-                </div>
-                <h3 className="text-xl font-bold text-white">{active.title}</h3>
-              </div>
-              <ul className="space-y-2">
-                {active.items.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-start gap-2 text-sm text-white/80"
+            <div className="grid">
+              {services.map((service, i) => {
+                const MobileIcon = service.icon
+                const isActive = i === activeIndex
+                return (
+                  <div
+                    key={service.title}
+                    style={{ gridArea: "1 / 1" }}
+                    className={`rounded-xl bg-[#1A2B4C] p-6 transition-opacity duration-300 ${
+                      isActive ? "opacity-100" : "opacity-0 pointer-events-none"
+                    }`}
                   >
-                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F26D21]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#F26D21]">
+                        <MobileIcon className="h-6 w-6 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-white">{service.title}</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {service.items.map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-start gap-2 text-sm text-white/80"
+                        >
+                          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F26D21]" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
             </div>
           </div>
         </div>
