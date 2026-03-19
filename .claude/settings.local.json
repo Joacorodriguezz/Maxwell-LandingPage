@@ -4,7 +4,22 @@
       "Bash(npx skills:*)",
       "Bash(cd \"/c/Users/Joaco/OneDrive - UTN FRLP/Desktop/Pryoectos\" && mkdir -p frontend backend && mv app components hooks lib public styles next.config.mjs next-env.d.ts package.json package-lock.json pnpm-lock.yaml postcss.config.mjs tsconfig.json components.json frontend/ 2>&1 && echo \"Done\")",
       "Bash(find \"/c/Users/Joaco/OneDrive - UTN FRLP/Desktop/Pryoectos/frontend\" -type f \\\\\\( -name \"*.config.*\" -o -name \"*.env*\" -o -name \".gitignore\" \\\\\\) 2>/dev/null | head -20)",
-      "Bash(cd \"C:\\\\Users\\\\Joaco\\\\OneDrive - UTN FRLP\\\\Desktop\\\\Pryoectos\\\\frontend\" && npm install resend)"
+      "Bash(cd \"C:\\\\Users\\\\Joaco\\\\OneDrive - UTN FRLP\\\\Desktop\\\\Pryoectos\\\\frontend\" && npm install resend)",
+      "Skill(update-config)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{const f=JSON.parse(d)?.tool_input?.file_path||'';if(f.includes('.env'))console.log(JSON.stringify({continue:false,stopReason:'🔒 Acceso bloqueado: los archivos .env estan protegidos.'}))}catch(e){}})\"",
+            "statusMessage": "Verificando acceso al archivo..."
+          }
+        ]
+      }
     ]
   }
 }

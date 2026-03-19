@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { MapPin, Phone, Mail, Send, CheckCircle, AlertCircle } from "lucide-react"
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile"
 import { useInView } from "@/hooks/use-in-view"
 import { contactSchema, type ContactFormData } from "@/lib/validations/contact"
 
@@ -42,6 +43,8 @@ function FloatField({
 
 export function Contact() {
   const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle")
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const turnstileRef = useRef<TurnstileInstance>(null)
 
   const [headerRef] = useInView({ variant: "up" })
   const [formRef] = useInView({ variant: "left", delay: 80 })
@@ -58,22 +61,29 @@ export function Contact() {
   })
 
   const onSubmit = async (data: ContactFormData) => {
+    if (!turnstileToken) return
     setSubmitStatus("idle")
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, turnstileToken }),
       })
 
       if (res.ok) {
         setSubmitStatus("success")
         reset()
+        turnstileRef.current?.reset()
+        setTurnstileToken(null)
       } else {
         setSubmitStatus("error")
+        turnstileRef.current?.reset()
+        setTurnstileToken(null)
       }
     } catch {
       setSubmitStatus("error")
+      turnstileRef.current?.reset()
+      setTurnstileToken(null)
     }
   }
 
@@ -196,9 +206,18 @@ export function Contact() {
                 />
               </FloatField>
 
+              <Turnstile
+                ref={turnstileRef}
+                siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "1x00000000000000000000AA"}
+                onSuccess={setTurnstileToken}
+                onError={() => setTurnstileToken(null)}
+                onExpire={() => setTurnstileToken(null)}
+                options={{ theme: "light", language: "es" }}
+              />
+
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !turnstileToken}
                 className="btn-shimmer flex w-full items-center justify-center gap-2 rounded-md bg-[#F26D21] px-4 py-2.5 text-sm font-medium text-white transition-[background-color] duration-200 hover:bg-[#D85A15] disabled:opacity-60"
               >
                 <Send className="h-4 w-4" />

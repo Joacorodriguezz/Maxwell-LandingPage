@@ -1,28 +1,41 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Resend } from "resend"
+import { Ratelimit } from "@upstash/ratelimit"
+import { Redis } from "@upstash/redis"
 import { contactSchema } from "@/lib/validations/contact"
+import { sendContactEmail, sendConfirmationEmail } from "@/lib/mail"
 
-// In-memory rate limiting: max 3 requests per IP per 10 minutes
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
-const RATE_LIMIT_MAX = 3
-const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
+// ---------------------------------------------------------------------------
+// CORS
+// ---------------------------------------------------------------------------
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN ?? "https://www.maxwellsa.com.ar"
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS })
-    return true
+function corsHeaders(origin: string | null) {
+  const allowed = origin === ALLOWED_ORIGIN || process.env.NODE_ENV === "development"
+  return {
+    "Access-Control-Allow-Origin": allowed ? (origin ?? ALLOWED_ORIGIN) : ALLOWED_ORIGIN,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
   }
-
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return false
-  }
-
-  entry.count++
-  return true
 }
+
+// Handle preflight
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin")
+  return new NextResponse(null, { status: 204, headers: corsHeaders(origin) })
+}
+
+// ---------------------------------------------------------------------------
+// IP Rate Limiting — Upstash Redis (3 req / 15 min)
+// Falls back gracefully if Redis is not configured (local dev).
+// ---------------------------------------------------------------------------
+const ratelimit =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Ratelimit({
+        redis: Redis.fromEnv(),
+        limiter: Ratelimit.slidingWindow(3, "15 m"),
+        analytics: false,
+      })
+    : null
 
 function getClientIp(req: NextRequest): string {
   return (
@@ -32,50 +45,114 @@ function getClientIp(req: NextRequest): string {
   )
 }
 
+// ---------------------------------------------------------------------------
+// Cloudflare Turnstile verification
+// ---------------------------------------------------------------------------
+async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+  const secret = process.env.TURNSTILE_SECRET_KEY
+  if (!secret) {
+    // Not configured — skip in dev, fail in prod
+    if (process.env.NODE_ENV === "production") return false
+    return true
+  }
+
+  try {
+    const res = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ secret, response: token, remoteip: ip }),
+      }
+    )
+    const data = (await res.json()) as { success: boolean }
+    return data.success === true
+  } catch {
+    return false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/contact
+// ---------------------------------------------------------------------------
 export async function POST(req: NextRequest) {
   const requestId = crypto.randomUUID()
+  const origin = req.headers.get("origin")
+  const headers = corsHeaders(origin)
 
-  const resendApiKey = process.env.RESEND_API_KEY
-  if (!resendApiKey) {
-    console.error("contact: missing RESEND_API_KEY", { requestId })
+  // --- CORS origin check ---------------------------------------------------
+  if (
+    process.env.NODE_ENV === "production" &&
+    origin !== ALLOWED_ORIGIN
+  ) {
+    console.warn("contact: cors_rejected", { requestId, origin })
     return NextResponse.json(
-      { error: "Configuración inválida del servidor.", requestId },
-      { status: 500 }
+      { error: "Origen no permitido." },
+      { status: 403, headers }
     )
   }
 
-  const resend = new Resend(resendApiKey)
+  // --- Rate limiting (Upstash) ---------------------------------------------
+  const ip = getClientIp(req)
 
-  // Modo test: por defecto usamos el remitente de sandbox de Resend
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev"
-  const fromName = process.env.RESEND_FROM_NAME ?? "Maxwell Web (Test)"
-  const internalTo = process.env.RESEND_INTERNAL_TO_EMAIL ?? "contacto@maxwellsa.com.ar"
+  if (ratelimit) {
+    const { success } = await ratelimit.limit(ip)
+    if (!success) {
+      console.warn("contact: rate_limit_exceeded", { requestId, ip })
+      return NextResponse.json(
+        { error: "Demasiadas solicitudes. Intente nuevamente en 15 minutos." },
+        { status: 429, headers }
+      )
+    }
+  }
 
-  // Rate limiting deshabilitado temporalmente para pruebas
-  // const ip = getClientIp(req)
-  // if (!checkRateLimit(ip)) {
-  //   return NextResponse.json(
-  //     { error: "Demasiadas solicitudes. Intente nuevamente en unos minutos." },
-  //     { status: 429 }
-  //   )
-  // }
-
+  // --- Parse body ----------------------------------------------------------
   let body: unknown
   try {
     body = await req.json()
   } catch {
-    return NextResponse.json({ error: "Solicitud inválida." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Solicitud inválida." },
+      { status: 400, headers }
+    )
   }
 
-  // Honeypot check — respond 200 to not reveal detection
-  if (typeof body === "object" && body !== null && "website" in body) {
-    const honeypot = (body as Record<string, unknown>).website
-    if (typeof honeypot === "string" && honeypot.length > 0) {
-      return NextResponse.json({ ok: true })
-    }
+  if (typeof body !== "object" || body === null) {
+    return NextResponse.json(
+      { error: "Solicitud inválida." },
+      { status: 400, headers }
+    )
   }
 
-  const result = contactSchema.safeParse(body)
+  const raw = body as Record<string, unknown>
+
+  // --- Honeypot ------------------------------------------------------------
+  if (typeof raw.website === "string" && raw.website.length > 0) {
+    console.warn("contact: honeypot_triggered", { requestId, ip })
+    return NextResponse.json({ ok: true }, { headers })
+  }
+
+  // --- Turnstile verification ----------------------------------------------
+  const turnstileToken = typeof raw.turnstileToken === "string" ? raw.turnstileToken : ""
+
+  if (!turnstileToken) {
+    return NextResponse.json(
+      { error: "Verificación de seguridad requerida." },
+      { status: 400, headers }
+    )
+  }
+
+  const turnstileOk = await verifyTurnstile(turnstileToken, ip)
+  if (!turnstileOk) {
+    console.warn("contact: turnstile_failed", { requestId, ip })
+    return NextResponse.json(
+      { error: "La verificación de seguridad falló. Intentá nuevamente." },
+      { status: 400, headers }
+    )
+  }
+
+  // --- Validate with Zod --------------------------------------------------
+  const result = contactSchema.safeParse(raw)
 
   if (!result.success) {
     const errors = Object.fromEntries(
@@ -84,43 +161,25 @@ export async function POST(req: NextRequest) {
         msgs?.[0] ?? "Campo inválido",
       ])
     )
-    return NextResponse.json({ errors }, { status: 400 })
+    return NextResponse.json({ errors }, { status: 400, headers })
   }
 
   const { nombre, empresa, email, telefono, asunto, mensaje } = result.data
 
-  // Envío interno: si falla, se devuelve error al usuario
-  let internalOk = false
+  // --- Send emails ---------------------------------------------------------
   try {
-    const { data, error } = await resend.emails.send({
-      from: `${fromName} <${fromEmail}>`,
-      to: [internalTo],
-      replyTo: email,
-      subject: `[Maxwell Web] ${asunto}`,
-      text: [
-        `Nombre: ${nombre}`,
-        `Empresa: ${empresa || "—"}`,
-        `Email: ${email}`,
-        `Teléfono: ${telefono || "—"}`,
-        ``,
-        `Mensaje:`,
-        mensaje,
-      ].join("\n"),
-    })
-
-    if (error) {
-      throw error
-    }
-
-    internalOk = true
-    console.info("contact: internal_sent", { requestId, id: data?.id })
+    await Promise.all([
+      sendContactEmail({ nombre, empresa, email, telefono, asunto, mensaje }),
+      sendConfirmationEmail({ nombre, email }),
+    ])
+    console.info("contact: emails_sent", { requestId, to: process.env.CONTACT_TO, confirmationTo: email })
   } catch (err) {
-    console.error("contact: internal_send_failed", { requestId, err })
+    console.error("contact: send_failed", { requestId, err })
     return NextResponse.json(
       { error: "Error al enviar el mensaje. Intente nuevamente." },
-      { status: 500 }
+      { status: 500, headers }
     )
   }
 
-  return NextResponse.json({ ok: true, requestId })
+  return NextResponse.json({ ok: true, requestId }, { headers })
 }
